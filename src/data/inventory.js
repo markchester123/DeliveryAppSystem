@@ -1,0 +1,15 @@
+export const INITIAL_INVENTORY = [
+  { id: 'beans', name: 'Espresso beans', category: 'Coffee', unit: 'kg', qty: 6, max: 10, reorder: 3 },
+  { id: 'milk', name: 'Fresh milk', category: 'Dairy', unit: 'L', qty: 14, max: 30, reorder: 8 },
+  { id: 'caramel', name: 'Caramel syrup', category: 'Syrups', unit: 'bottles', qty: 5, max: 10, reorder: 2 },
+  { id: 'hazelnut', name: 'Hazelnut syrup', category: 'Syrups', unit: 'bottles', qty: 1, max: 10, reorder: 2 },
+  { id: 'strawberry', name: 'Strawberry syrup', category: 'Syrups', unit: 'bottles', qty: 6, max: 10, reorder: 2 },
+  { id: 'blueberry', name: 'Blueberry syrup', category: 'Syrups', unit: 'bottles', qty: 0, max: 10, reorder: 2 },
+  { id: 'cucumber', name: 'Cucumber puree', category: 'Syrups', unit: 'tubs', qty: 4, max: 8, reorder: 2 },
+  { id: 'matcha', name: 'Matcha powder', category: 'Coffee', unit: 'packs', qty: 2, max: 10, reorder: 3 },
+  { id: 'soda', name: 'Soda water', category: 'Mixers', unit: 'bottles', qty: 30, max: 48, reorder: 12 },
+  { id: 'cup16', name: '16 oz cups', category: 'Packaging', unit: 'pcs', qty: 140, max: 300, reorder: 60 },
+  { id: 'cup12', name: '12 oz cups', category: 'Packaging', unit: 'pcs', qty: 55, max: 300, reorder: 60 },
+  { id: 'lids', name: 'Cup lids', category: 'Packaging', unit: 'pcs', qty: 260, max: 500, reorder: 100 },
+  { id: 'straws', name: 'Straws', category: 'Packaging', unit: 'pcs', qty: 480, max: 1000, reorder: 200 },
+];
