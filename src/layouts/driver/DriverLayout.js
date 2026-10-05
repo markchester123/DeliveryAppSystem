@@ -34,9 +34,11 @@ export default function DriverLayout() {
             <IconButton icon="menu" label="Account" onPress={() => setMenuOpen(true)} />
           </>}
         />
-        {tab === 'jobs' && <JobsScreen online={online} onAccepted={() => setTab('delivery')} />}
-        {tab === 'delivery' && <DeliveryScreen onMessage={() => setTab('chat')} onDone={() => setTab('jobs')} />}
-        {tab === 'chat' && <DriverChatScreen />}
+        <View style={{ flex: 1 }}>
+          {tab === 'jobs' && <JobsScreen online={online} onAccepted={() => setTab('delivery')} />}
+          {tab === 'delivery' && <DeliveryScreen onMessage={() => setTab('chat')} onDone={() => setTab('jobs')} />}
+          {tab === 'chat' && <DriverChatScreen />}
+        </View>
         <BottomTabs tabs={TABS} current={tab} onChange={setTab} />
       </Frame>
       <AccountSheet visible={menuOpen} onClose={() => setMenuOpen(false)} />

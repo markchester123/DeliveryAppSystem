@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text } from 'react-native';
+import { ScrollView, View, Text, Image } from 'react-native';
 import Button from '../components/Button';
 import Stepper from '../components/Stepper';
 import { useCustomerSession } from './CustomerSession';
@@ -14,6 +14,13 @@ function Row({ item, soldOut }) {
   const q = s.cart[item.id] || 0;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line }}>
+      {item.image ? (
+        <Image
+          source={item.image}
+          style={{ width: 56, height: 56, borderRadius: 10, backgroundColor: colors.line, opacity: soldOut ? 0.5 : 1 }}
+          resizeMode="cover"
+        />
+      ) : null}
       <View style={{ flex: 1 }}>
         <Text style={[type.body, { fontWeight: '600', opacity: soldOut ? 0.5 : 1 }]}>{item.name}</Text>
         <Text style={type.small}>{peso(item.price)} · {item.size} oz</Text>
@@ -42,7 +49,7 @@ export default function MenuScreen({ openCart }) {
       </ScrollView>
       {s.count ? (
         <View style={{ padding: 16, paddingTop: 8 }}>
-          <Button variant="primary" block title={`View order · ${s.count} item${s.count > 1 ? 's' : ''} · ${peso(s.subtotal)}`} onPress={openCart} />
+          <Button variant="primary" block title={`Checkout · ${s.count} item${s.count > 1 ? 's' : ''} · ${peso(s.subtotal)}`} onPress={openCart} />
         </View>
       ) : null}
     </View>

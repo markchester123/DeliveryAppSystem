@@ -10,7 +10,7 @@ import { ordersOfCustomer, activeOrders } from '../../data/selectors';
 import { STATUS_LABEL } from '../../data/constants';
 import { peso, firstName } from '../../utils/format';
 
-function OrderCard({ order, onChat }) {
+export function OrderCard({ order, onChat }) {
   const last = order.log[order.log.length - 1];
   return (
     <View style={{ backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.lg, padding: 16, gap: 10 }}>
