@@ -1,154 +1,132 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, Pressable, Modal, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Modal } from 'react-native';
 import Sheet from '../components/Sheet';
-import Pill from '../components/Pill';
-import Icon from '../components/Icon';
-import { EmptyState } from '../components/Feedback';
-import { OrderCard } from './HomeScreen';
+import Button from '../components/Button';
+import { TextField, SwitchRow } from '../components/Inputs';
+import { EmptyState, useToast } from '../components/Feedback';
+import { useCustomerSession } from './CustomerSession';
 import { colors, type, radius } from '../theme';
-import { useAuth } from '../../users';
 import { useStore } from '../../data/StoreContext';
-import { ordersOfCustomer, activeOrders } from '../../data/selectors';
-import { STATUS_LABEL } from '../../data/constants';
-import { menuItem } from '../../data/menu';
-import { peso, firstName } from '../../utils/format';
+import { peso } from '../../utils/format';
 
-function Tab({ label, selected, onPress }) {
+const PAY = [['gcash', 'G-Cash'], ['maya', 'Maya'], ['cod', 'Cash on delivery']];
+
+function Card({ children }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="tab"
-      accessibilityState={{ selected }}
-      style={{
-        flex: 1,
-        paddingVertical: 10,
-        alignItems: 'center',
-        borderBottomWidth: 2,
-        borderBottomColor: selected ? colors.primary : 'transparent',
-      }}
-    >
-      <Text style={[type.body, { fontWeight: '600', color: selected ? colors.primary : colors.text }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-const PAY_LABEL = { gcash: 'G-Cash', maya: 'Maya', cod: 'Cash on delivery' };
-
-function Row({ label, value }) {
-  return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
-      <Text style={type.body}>{label}</Text>
-      <Text style={[type.body, { fontWeight: '600' }]}>{value}</Text>
+    <View style={{ backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, padding: 14, marginBottom: 12 }}>
+      {children}
     </View>
   );
 }
 
-function OrderDetail({ order, onClose, onChat }) {
+function SectionLabel({ children }) {
+  return <Text style={[type.small, { fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }]}>{children}</Text>;
+}
+
+function Radio({ selected, label, onPress }) {
   return (
-    <Modal visible={!!order} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
-        <View style={{ maxHeight: '85%', backgroundColor: colors.card, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 18 }}>
-          {order ? (
-            <>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <Text style={type.title}>Order {order.id}</Text>
-                <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icon name="x" size={22} />
-                </Pressable>
-              </View>
-
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-                  <Pill status={order.status} label={STATUS_LABEL[order.status]} />
-                </View>
-
-                <Text style={[type.small, { fontWeight: '700', textTransform: 'uppercase', marginBottom: 6 }]}>Items</Text>
-                {order.items.map((line, idx) => {
-                  const m = menuItem(line.id);
-                  return (
-                    <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
-                      <Text style={type.body}>{m ? m.name : line.id} × {line.q}</Text>
-                      <Text style={type.body}>{m ? peso(m.price * line.q) : ''}</Text>
-                    </View>
-                  );
-                })}
-
-                <View style={{ borderTopWidth: 1, borderTopColor: colors.line, marginTop: 8, paddingTop: 8 }}>
-                  <Row label="Subtotal" value={peso(order.subtotal)} />
-                  {order.discount ? <Row label="Discount" value={`-${peso(order.discount)}`} /> : null}
-                  <Row label="Total" value={peso(order.total)} />
-                </View>
-
-                <Text style={[type.small, { fontWeight: '700', textTransform: 'uppercase', marginTop: 16, marginBottom: 6 }]}>Delivery</Text>
-                <Text style={type.body}>{order.addr}</Text>
-                {order.note ? <Text style={type.small}>Note: {order.note}</Text> : null}
-                <Text style={type.small}>{order.contactless ? 'Contactless: messages only, no calls.' : 'Calls okay.'}</Text>
-
-                <Text style={[type.small, { fontWeight: '700', textTransform: 'uppercase', marginTop: 16, marginBottom: 6 }]}>Payment</Text>
-                <Text style={type.body}>{PAY_LABEL[order.pay] || order.pay} {order.paid ? '· Paid' : '· Pay on delivery'}</Text>
-
-                {order.driver ? (
-                  <>
-                    <Text style={[type.small, { fontWeight: '700', textTransform: 'uppercase', marginTop: 16, marginBottom: 6 }]}>Rider</Text>
-                    <Text style={type.body}>{order.driver}</Text>
-                  </>
-                ) : null}
-
-                <Text style={[type.small, { fontWeight: '700', textTransform: 'uppercase', marginTop: 16, marginBottom: 6 }]}>Status timeline</Text>
-                {order.log.map((entry, idx) => (
-                  <View key={idx} style={{ flexDirection: 'row', gap: 8, paddingVertical: 4 }}>
-                    <Text style={[type.small, { width: 64 }]}>{new Date(entry.t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                    <Text style={[type.body, { flex: 1 }]}>{entry.text}</Text>
-                  </View>
-                ))}
-
-                {order.driver ? (
-                  <Pressable onPress={() => onChat(order.id)} style={{ marginTop: 18, paddingVertical: 12, borderRadius: radius.lg, backgroundColor: colors.primary, alignItems: 'center' }}>
-                    <Text style={{ color: '#fff', fontWeight: '700' }}>Chat with {firstName(order.driver)}</Text>
-                  </Pressable>
-                ) : null}
-
-                <View style={{ height: 12 }} />
-              </ScrollView>
-            </>
-          ) : null}
-        </View>
+    <Pressable onPress={onPress} accessibilityRole="radio" accessibilityState={{ selected }} accessibilityLabel={label}
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 46 }}>
+      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: selected ? colors.primary : colors.line, alignItems: 'center', justifyContent: 'center' }}>
+        {selected ? <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: colors.primary }} /> : null}
       </View>
-    </Modal>
+      <Text style={type.body}>{label}</Text>
+    </Pressable>
   );
 }
 
-export default function OrdersSheet({ visible, onClose, onChat }) {
-  const { user } = useAuth();
-  const { state } = useStore();
-  const [tab, setTab] = useState('active');
-  const [selected, setSelected] = useState(null);
+function Line({ label, value, color }) {
+  return (
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+      <Text style={type.body}>{label}</Text>
+      <Text style={[type.body, color ? { color } : null]}>{value}</Text>
+    </View>
+  );
+}
 
-  const all = ordersOfCustomer(state.orders, user.name);
-  const active = activeOrders(all);
-  const activeIds = new Set(active.map((o) => o.id));
-  const history = all.filter((o) => !activeIds.has(o.id));
-  const list = tab === 'active' ? active : history;
+export default function OrdersSheet({ visible, onClose, onPlaced }) {
+  const s = useCustomerSession();
+  const { actions } = useStore();
+  const toast = useToast();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const requestPlace = () => {
+    if (!s.addr.trim()) { toast('Enter your address first'); return; }
+    setConfirmOpen(true);
+  };
+
+  const place = () => {
+    const result = actions.placeOrder({
+      items: s.lines.map((l) => ({ id: l.item.id, qty: l.qty })),
+      pay: s.pay, contactless: s.contactless, useCoupon: s.useCoupon,
+      loc: { addr: s.addr.trim(), land: '', note: s.note.trim() },
+    });
+    setConfirmOpen(false);
+    if (!result.ok) { toast(result.reason); return; }
+    s.clearCart();
+    onPlaced();
+    toast(`Order ${result.id} placed`);
+  };
+
+  const payLabel = PAY.find(([k]) => k === s.pay)?.[1] ?? '';
 
   return (
-    <Sheet visible={visible} onClose={onClose} title="My orders">
-      <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.line, marginBottom: 12 }}>
-        <Tab label={`Active${active.length ? ` (${active.length})` : ''}`} selected={tab === 'active'} onPress={() => setTab('active')} />
-        <Tab label="History" selected={tab === 'history'} onPress={() => setTab('history')} />
-      </View>
+    <Sheet visible={visible} onClose={onClose} title="Place your order">
+      {!s.lines.length ? <EmptyState>Your cart is empty.</EmptyState> : (
+        <View>
+          <Card>
+            <SectionLabel>Delivery address</SectionLabel>
+            <TextField label="Address" value={s.addr} onChangeText={s.setAddr} />
+            <TextField label="Note for the rider (optional)" value={s.note} onChangeText={s.setNote} />
+            <SwitchRow title="Contactless (no calls)" value={s.contactless} onValueChange={s.setContactless} />
+          </Card>
 
-      <ScrollView contentContainerStyle={{ gap: 12 }}>
-        {list.length
-          ? list.map((o) => (
-              <Pressable key={o.id} onPress={() => setSelected(o)}>
-                <OrderCard order={o} onChat={() => onChat(o.id)} />
+          <Card>
+            <SectionLabel>Payment method</SectionLabel>
+            <View accessibilityRole="radiogroup">
+              {PAY.map(([k, l]) => <Radio key={k} label={l} selected={s.pay === k} onPress={() => s.setPay(k)} />)}
+            </View>
+          </Card>
+
+          <Card>
+            <SectionLabel>Order summary</SectionLabel>
+            {s.lines.map(({ item, qty }) => (
+              <Line key={item.id} label={`${item.name} × ${qty}`} value={peso(item.price * qty)} />
+            ))}
+            {s.couponReady ? <SwitchRow title="Use 10% coupon" value={s.useCoupon} onValueChange={s.setUseCoupon} /> : null}
+            <View style={{ borderTopWidth: 1, borderTopColor: colors.line, marginTop: 8, paddingTop: 8 }}>
+              <Line label="Subtotal" value={peso(s.subtotal)} />
+              {s.discount ? <Line label="Coupon discount" value={`-${peso(s.discount)}`} color={colors.primary} /> : null}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 6 }}>
+                <Text style={type.heading}>Total</Text>
+                <Text style={type.heading}>{peso(s.total)}</Text>
+              </View>
+            </View>
+          </Card>
+
+          <Button variant="primary" block title={`Place order · ${peso(s.total)}`} onPress={requestPlace} />
+        </View>
+      )}
+
+      <Modal visible={confirmOpen} transparent animationType="fade" onRequestClose={() => setConfirmOpen(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <View style={{ width: '100%', maxWidth: 360, backgroundColor: colors.card, borderRadius: radius.lg, padding: 20 }}>
+            <Text style={[type.heading, { marginBottom: 6 }]}>Confirm your order?</Text>
+            <Text style={[type.body, { marginBottom: 4 }]}>{s.count} item{s.count > 1 ? 's' : ''} · {peso(s.total)}</Text>
+            <Text style={[type.small, { marginBottom: 16 }]}>Paying with {payLabel}, delivered to: {s.addr.trim()}</Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Pressable onPress={() => setConfirmOpen(false)}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.line, alignItems: 'center' }}>
+                <Text style={[type.body, { fontWeight: '600' }]}>Cancel</Text>
               </Pressable>
-            ))
-          : <EmptyState>{tab === 'active' ? 'No orders on the way.' : 'No past orders yet.'}</EmptyState>}
-      </ScrollView>
-
-      <OrderDetail order={selected} onClose={() => setSelected(null)} onChat={(id) => { setSelected(null); onChat(id); }} />
+              <Pressable onPress={place}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: radius.lg, backgroundColor: colors.primary, alignItems: 'center' }}>
+                <Text style={[type.body, { fontWeight: '700', color: '#fff' }]}>Confirm</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Sheet>
   );
 }
