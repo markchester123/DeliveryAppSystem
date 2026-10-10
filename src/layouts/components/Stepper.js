@@ -12,12 +12,42 @@ function Round({ icon, label, onPress, disabled }) {
   );
 }
 
-export default function Stepper({ value, onMinus, onPlus, minusDisabled, plusDisabled, label = '' }) {
+export default function Stepper({ value, label, onMinus, onPlus }) {
+  const btn = {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <Round icon="minus" label={`Remove ${label}`.trim()} onPress={onMinus} disabled={minusDisabled} />
-      <Text style={{ minWidth: 34, textAlign: 'center', fontWeight: '700', fontSize: 16 }} accessibilityLabel={`${value}`}>{value}</Text>
-      <Round icon="plus" label={`Add ${label}`.trim()} onPress={onPlus} disabled={plusDisabled} />
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <Pressable
+        onPress={onMinus}
+        hitSlop={8}
+        style={btn}
+        accessibilityRole="button"
+        accessibilityLabel={`Decrease ${label}`}
+      >
+        <Text style={{ fontSize: 18 }}>−</Text>
+      </Pressable>
+
+      <Text style={{ fontWeight: '700', minWidth: 16, textAlign: 'center' }}>
+        {value}
+      </Text>
+
+      <Pressable
+        onPress={onPlus}
+        hitSlop={8}
+        style={btn}
+        accessibilityRole="button"
+        accessibilityLabel={`Increase ${label}`}
+      >
+        <Text style={{ fontSize: 18 }}>+</Text>
+      </Pressable>
     </View>
   );
 }
