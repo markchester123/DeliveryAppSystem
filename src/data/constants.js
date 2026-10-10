@@ -1,10 +1,11 @@
-export const STATUS_FLOW = ['preparing', 'ready', 'picked', 'arrived', 'delivered'];
+export const STATUS_FLOW = ['preparing', 'ready', 'picked', 'arrived', 'dropping', 'delivered'];
 
 export const STATUS_LABEL = {
   preparing: 'Preparing',
   ready: 'Ready for pickup',
   picked: 'On the way',
   arrived: 'Arrived',
+  dropping: 'Dropping off',
   delivered: 'Delivered',
 };
 
@@ -13,6 +14,7 @@ export const STATUS_LOG = {
   ready: 'Your order is packed and waiting for a rider.',
   picked: 'Your rider left the café with your order.',
   arrived: 'Your rider has arrived.',
+  dropping: 'Your rider is dropping off your order.',
   delivered: 'Delivered. Enjoy!',
 };
 

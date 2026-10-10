@@ -9,12 +9,14 @@ import SalesScreen from './SalesScreen';
 import OrdersScreen from './OrdersScreen';
 import ChatsScreen from './ChatsScreen';
 import ReportsScreen from './ReportsScreen';
+import { useLowStockToast } from '../components/LowStockAlert';
 import { colors } from '../theme';
 import { useStore } from '../../data/StoreContext';
 import { activeOrders } from '../../data/selectors';
 
 export default function AdminLayout() {
   const { state } = useStore();
+  useLowStockToast(state.inventory);
   const { width } = useWindowDimensions();
   const wide = width >= 820;
   const [tab, setTab] = useState('dashboard');

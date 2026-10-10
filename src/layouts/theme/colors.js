@@ -19,6 +19,7 @@ export const statusColors = {
   ready: [colors.warnTint, colors.warn],
   picked: [colors.primaryTint, '#1F5230'],
   arrived: [colors.primary, '#FFFFFF'],
+  dropping: [colors.primary, '#FFFFFF'],
   delivered: ['#ECE8E1', '#5E5850'],
   ok: [colors.primaryTint, '#1F5230'],
   low: [colors.warnTint, colors.warn],
