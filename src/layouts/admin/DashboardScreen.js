@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import BarChart from '../components/BarChart';
 import Pill from '../components/Pill';
+import { LowStockAlert } from '../components/LowStockAlert';
 import { Stats, PageTitle, H } from './parts';
 import { weekData, fmtK } from './adminData';
 import { colors, type } from '../theme';
@@ -18,6 +19,7 @@ export default function DashboardScreen() {
   return (
     <View>
       <PageTitle>Dashboard</PageTitle>
+      <LowStockAlert inventory={state.inventory} style={{ marginBottom: 16 }} />
       <Stats items={[
         { label: 'Sales today', value: peso(sumTotal(today)) },
         { label: 'Orders today', value: String(today.length) },

@@ -22,10 +22,12 @@ const patchOrder = (s, id, fn) => ({ ...s, orders: s.orders.map((o) => (o.id ===
 const addMessage = (s, orderId, from, text) => ({ ...s, chats: { ...s.chats, [orderId]: (s.chats[orderId] || []).concat({ from, text, t: Date.now() }) } });
 const addLog = (o, text) => ({ ...o, log: o.log.concat({ t: Date.now(), text }) });
 
+// `log` goes on the order timeline. `chat` (optional) also posts a system line in the chat for both sides.
 const NEXT = {
   ready: { to: 'picked', log: 'left the café with your order.' },
-  picked: { to: 'arrived', log: 'has arrived.' },
-  arrived: { to: 'delivered', log: 'dropped off your order.' },
+  picked: { to: 'arrived', log: 'has arrived.', chat: (n) => `${n} has arrived.` },
+  arrived: { to: 'dropping', log: 'is dropping off your order.', chat: (n) => `${n} is dropping off the order.` },
+  dropping: { to: 'delivered', log: 'finished the delivery.', chat: () => 'Delivery finished. This chat is now closed.' },
 };
 
 function reducer(s, a) {
@@ -46,10 +48,16 @@ function reducer(s, a) {
       const order = s.orders.find((o) => o.id === a.id);
       const nx = order && NEXT[order.status];
       if (!nx) return s;
-      return patchOrder(s, a.id, (o) => addLog({ ...o, status: nx.to }, `${a.driver.split(' ')[0]} ${nx.log}`));
+      const first = a.driver.split(' ')[0];
+      const next = patchOrder(s, a.id, (o) => addLog({ ...o, status: nx.to }, `${first} ${nx.log}`));
+      return nx.chat ? addMessage(next, a.id, 'system', nx.chat(first)) : next;
     }
-    case 'CHAT':
+    case 'CHAT': {
+      // A finished delivery is archived: no more messages in either direction.
+      const order = s.orders.find((o) => o.id === a.orderId);
+      if (!order || order.status === 'delivered') return s;
       return addMessage(s, a.orderId, a.from, a.text);
+    }
     case 'LOG':
       return patchOrder(s, a.orderId, (o) => addLog(o, a.text));
     case 'STOCK':
@@ -91,7 +99,11 @@ export function StoreProvider({ children }) {
           pay, paid: pay !== 'cod', status: 'preparing', driver: null, addr: loc.addr, land: loc.land, note: loc.note,
           contactless, t: Date.now(), log: [{ t: Date.now(), text: STATUS_LOG.preparing }],
         };
-        dispatch({ type: 'PLACE_ORDER', order, usage });
+        // Reserve the stock (and the order number) right now, before React re-renders. Without this, two orders
+        // placed in the same moment both check the same stale inventory and the same orderSeq.
+        const action = { type: 'PLACE_ORDER', order, usage };
+        stateRef.current = reducer(s, action);
+        dispatch(action);
         setTimeout(() => dispatch({ type: 'KITCHEN_READY', id }), 6000);
         return { ok: true, id };
       },

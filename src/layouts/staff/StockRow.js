@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import Pill from '../components/Pill';
 import Button from '../components/Button';
 import Stepper from '../components/Stepper';
 import { colors, type } from '../theme';
@@ -19,7 +18,7 @@ export default function StockRow({ item, onAdjust, onRestock }) {
           <Text style={[type.body, { fontWeight: '600' }]}>{item.name}</Text>
           <Text style={type.small}>{formatQty(item.qty)} of {item.max} {item.unit}</Text>
         </View>
-        <Pill status={st} label={LABEL[st]} />
+        <Text style={{ fontSize: 13, color: colors.muted }}>{LABEL[st]}</Text>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Stepper value={formatQty(item.qty)} label={item.name} onMinus={() => onAdjust(item.id, -step)} onPlus={() => onAdjust(item.id, step)} minusDisabled={item.qty <= 0} plusDisabled={item.qty >= item.max} />

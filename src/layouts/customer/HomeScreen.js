@@ -19,7 +19,7 @@ export function OrderCard({ order, onChat }) {
         <Pill status={order.status} label={STATUS_LABEL[order.status]} />
       </View>
       <Text style={type.body}>{last.text}</Text>
-      {order.status === 'arrived' && order.pay === 'cod' ? <Note tone="warn">Prepare {peso(order.total)} in cash.</Note> : null}
+      {(order.status === 'arrived' || order.status === 'dropping') && order.pay === 'cod' ? <Note tone="warn">Prepare {peso(order.total)} in cash.</Note> : null}
       {order.contactless ? <Text style={type.small}>Contactless: messages only, no calls.</Text> : null}
       {order.driver ? <Button small title={`Chat with ${firstName(order.driver)}`} icon="message-circle" onPress={onChat} /> : null}
     </View>

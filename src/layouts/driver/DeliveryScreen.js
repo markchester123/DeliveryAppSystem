@@ -11,7 +11,7 @@ import { activeJobOf, itemsText } from '../../data/selectors';
 import { STATUS_LABEL, PAYMENT_LABEL, QUICK_UPDATES } from '../../data/constants';
 import { peso, shortName, firstName } from '../../utils/format';
 
-const NEXT_LABEL = { ready: 'Picked up', picked: "I've arrived", arrived: 'Dropped off' };
+const NEXT_LABEL = { ready: 'Picked up', picked: "I've arrived", arrived: 'Dropping off', dropping: 'Finish delivery' };
 
 const Fact = ({ k, v }) => (
   <View style={{ flexDirection: 'row', gap: 10, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: colors.line }}>
@@ -28,7 +28,7 @@ export default function DeliveryScreen({ onMessage, onDone }) {
   if (!o) return <EmptyState style={{ padding: 16 }}>No active delivery. Take a job from Jobs.</EmptyState>;
 
   const advance = () => {
-    const finishing = o.status === 'arrived';
+    const finishing = o.status === 'dropping';
     actions.advanceDelivery(o.id);
     if (finishing) { toast('Delivery complete'); onDone(); }
   };
