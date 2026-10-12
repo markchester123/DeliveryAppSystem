@@ -9,7 +9,7 @@ import { useStore } from '../../data/StoreContext';
 import { ordersOfCustomer, activeOrders } from '../../data/selectors';
 import { STATUS_LABEL } from '../../data/constants';
 import { peso, firstName } from '../../utils/format';
-
+import BestSellers from './BestSellers';
 
 const HERO = require('../../../assets/products/Hero Card Section.png');
 const HERO_RATIO = 576 / 370;
@@ -46,6 +46,7 @@ export default function HomeScreen({ go, openChat }) {
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
       <Hero />
       <Button title="Order a drink" variant="primary" onPress={() => go('menu')} block />
+      <BestSellers go={go} />
       {active.length ? active.map((o) => <OrderCard key={o.id} order={o} onChat={() => openChat(o.id)} />) : <EmptyState>No orders on the way.</EmptyState>}
     </ScrollView>
   );

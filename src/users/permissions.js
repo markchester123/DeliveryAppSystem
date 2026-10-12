@@ -2,7 +2,7 @@ export const PERMISSIONS = {
   customer: ['menu.browse', 'order.place', 'order.pay', 'coupon.claim', 'location.set', 'chat.send', 'report.create'],
   driver: ['job.accept', 'delivery.instructions', 'delivery.update', 'chat.send', 'customer.contact'],
   staff: ['inventory.view', 'inventory.adjust'],
-  admin: ['dashboard.view', 'sales.view', 'orders.monitor', 'chats.oversee', 'reports.handle', 'inventory.view'],
+  admin: ['dashboard.view', 'sales.view', 'orders.monitor', 'chats.oversee', 'reports.handle', 'inventory.view', 'announce.post'],
 };
 
 export function can(user, permission) {

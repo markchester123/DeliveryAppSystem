@@ -11,7 +11,17 @@ import { shortName } from '../../utils/format';
 export default function ChatsScreen({ wide, selected, onSelect }) {
   const { state, actions } = useStore();
   const toast = useToast();
-  const ids = Object.keys(state.chats).sort((a, b) => state.chats[b].slice(-1)[0].t - state.chats[a].slice(-1)[0].t);
+
+  // A brand-new order has no messages yet, so fall back to the order's own time.
+  const lastOf = (id) => (state.chats[id] || []).slice(-1)[0];
+  const timeOf = (id) => {
+    const last = lastOf(id);
+    const order = state.orders.find((o) => o.id === id);
+    return last ? last.t : order ? order.t : 0;
+  };
+  const ids = Object.keys(state.chats)
+    .filter((id) => state.orders.some((o) => o.id === id))
+    .sort((a, b) => timeOf(b) - timeOf(a));
   if (!ids.length) return <View><PageTitle>Chats</PageTitle><EmptyState>No chats yet.</EmptyState></View>;
 
   const sel = ids.indexOf(selected) >= 0 ? selected : wide ? ids[0] : null;
@@ -21,12 +31,12 @@ export default function ChatsScreen({ wide, selected, onSelect }) {
     <View style={{ width: wide ? 280 : '100%' }}>
       {ids.map((id) => {
         const c = state.orders.find((o) => o.id === id);
-        const last = state.chats[id].slice(-1)[0];
+        const last = lastOf(id);
         return (
           <Pressable key={id} onPress={() => onSelect(id)} accessibilityRole="button" accessibilityLabel={`Chat ${id}`}
             style={{ paddingVertical: 12, paddingRight: 10, borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: id === sel ? colors.primaryTint : 'transparent', paddingLeft: 8 }}>
             <Text style={[type.body, { fontWeight: '600' }]}>{id} · {shortName(c.customer)}</Text>
-            <Text numberOfLines={1} style={type.small}>{last.text}</Text>
+            <Text numberOfLines={1} style={type.small}>{last ? last.text : 'No messages yet'}</Text>
           </Pressable>
         );
       })}
@@ -45,7 +55,7 @@ export default function ChatsScreen({ wide, selected, onSelect }) {
           <Button small icon="flag" title="Flag" onPress={() => { actions.flagChat(order.id); toast('Flagged. See Reports.'); }} />
         </View>
       </View>
-      <View style={{ height: 340 }}><ChatThread messages={state.chats[order.id]} viewer="driver" /></View>
+      <View style={{ height: 340 }}><ChatThread messages={state.chats[order.id] || []} viewer="driver" /></View>
       <Text style={type.small}>Read only.</Text>
     </View>
   ) : null;

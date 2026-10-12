@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ScrollView, View, Text, Image } from 'react-native';
+import { ScrollView, View, Text, Image, Pressable, Modal, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import Button from '../components/Button';
 import { TextField } from '../components/Inputs';
+import Icon from '../components/Icon';
 import { EmptyState, useToast } from '../components/Feedback';
 import { colors, type, radius } from '../theme';
 import { useAuth, can } from '../../users';
@@ -26,6 +27,35 @@ async function shrink(uri) {
   }
   const out = await M.manipulateAsync(uri, [{ resize: { width: 640 } }], { compress: 0.6, format: M.SaveFormat.JPEG, base64: true });
   return out.base64;
+}
+
+// Full view of one announcement: whole photo, date and the complete message.
+function AnnouncementDetail({ item, onClose }) {
+  return (
+    <Modal visible={!!item} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' }}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
+        <View style={{ maxHeight: '90%', backgroundColor: colors.card, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 18 }}>
+          {item ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <Text style={[type.small, { fontWeight: '700', flex: 1 }]}>{when(item.date)}</Text>
+                <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icon name="x" size={22} />
+                </Pressable>
+              </View>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <Text style={[type.title, { marginBottom: 10 }]}>{item.title}</Text>
+                {item.image ? <Image source={{ uri: item.image }} style={{ width: '100%', aspectRatio: 1, borderRadius: radius.md, backgroundColor: colors.line, marginBottom: 12 }} resizeMode="contain" /> : null}
+                {item.body ? <Text style={type.body}>{item.body}</Text> : null}
+                <View style={{ height: 16 }} />
+              </ScrollView>
+            </>
+          ) : null}
+        </View>
+      </View>
+    </Modal>
+  );
 }
 
 function Composer() {
@@ -82,6 +112,8 @@ export default function AnnouncementsScreen({ scroll = true }) {
   const { user } = useAuth();
   const { state, actions } = useStore();
   const canPost = can(user, 'announce.post');
+  const [openId, setOpenId] = useState(null);
+  const opened = state.announcements.find((a) => a.id === openId) || null;
 
   // Remember which posts were new when this screen opened, so they can wear a "NEW" tag.
   const fresh = useRef(new Set());
@@ -98,7 +130,7 @@ export default function AnnouncementsScreen({ scroll = true }) {
       {state.announcements.length ? state.announcements.map((a) => (
         <View key={a.id} style={{ marginBottom: 16 }}>
           <Text style={[type.small, { fontWeight: '700', marginBottom: 6 }]}>{when(a.date)}</Text>
-          <View style={{ backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: fresh.current.has(a.id) ? colors.primary : colors.line, overflow: 'hidden' }}>
+          <Pressable onPress={() => setOpenId(a.id)} accessibilityRole="button" accessibilityLabel={`Open announcement: ${a.title}`} style={{ backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: fresh.current.has(a.id) ? colors.primary : colors.line, overflow: 'hidden' }}>
             {a.image ? <Image source={{ uri: a.image }} style={{ width: '100%', height: 200, backgroundColor: colors.line }} resizeMode="cover" /> : null}
             <View style={{ padding: 14, gap: 6 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -109,11 +141,13 @@ export default function AnnouncementsScreen({ scroll = true }) {
                   </View>
                 ) : null}
               </View>
-              {a.body ? <Text style={type.body}>{a.body}</Text> : null}
+              {a.body ? <Text numberOfLines={3} style={type.body}>{a.body}</Text> : null}
+              <Text style={[type.small, { color: colors.primary, fontWeight: '600' }]}>Tap to read more</Text>
             </View>
-          </View>
+          </Pressable>
         </View>
       )) : <EmptyState>No announcements yet.</EmptyState>}
+      <AnnouncementDetail item={opened} onClose={() => setOpenId(null)} />
     </View>
   );
 
