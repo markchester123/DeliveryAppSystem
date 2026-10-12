@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Modal } from 'react-native';
+import { View, Text, Pressable, Modal, Image } from 'react-native';
 import Sheet from '../components/Sheet';
 import Button from '../components/Button';
 import { TextField, SwitchRow } from '../components/Inputs';
@@ -88,7 +88,7 @@ export default function OrdersSheet({ visible, onClose, onPlaced }) {
 
   const place = () => {
     const result = actions.placeOrder({
-      items: s.lines.map((l) => ({ id: l.item.id, qty: l.qty })),
+      items: s.lines.map((l) => ({ id: l.key, qty: l.qty })), // key = "<productId>-<size>"
       pay: s.pay, contactless: s.contactless, useCoupon: s.useCoupon,
       loc: { addr: s.addr.trim(), land: '', note: s.note.trim() },
     });
@@ -116,6 +116,20 @@ export default function OrdersSheet({ visible, onClose, onPlaced }) {
     <Sheet visible={visible} onClose={handleClose} title="Place your order">
       {!s.lines.length ? <EmptyState>Your cart is empty.</EmptyState> : (
         <View>
+          <Card>
+            <SectionLabel>Order preview</SectionLabel>
+            {s.lines.map(({ key, item, qty }) => (
+              <View key={key} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
+                {item.image ? <Image source={item.image} style={{ width: 48, height: 48, borderRadius: 8, backgroundColor: colors.line }} resizeMode="cover" /> : null}
+                <View style={{ flex: 1 }}>
+                  <Text style={[type.body, { fontWeight: '600' }]}>{item.name}</Text>
+                  <Text style={type.small}>{item.size} oz · {qty} × {peso(item.price)}</Text>
+                </View>
+                <Text style={[type.body, { fontWeight: '600' }]}>{peso(item.price * qty)}</Text>
+              </View>
+            ))}
+          </Card>
+
           <Card>
             <SectionLabel>Delivery address</SectionLabel>
 
@@ -160,9 +174,6 @@ export default function OrdersSheet({ visible, onClose, onPlaced }) {
 
           <Card>
             <SectionLabel>Order summary</SectionLabel>
-            {s.lines.map(({ item, qty }) => (
-              <Line key={item.id} label={`${item.name} × ${qty}`} value={peso(item.price * qty)} />
-            ))}
             {s.couponReady ? <SwitchRow title="Use 10% coupon" value={s.useCoupon} onValueChange={s.setUseCoupon} /> : null}
             <View style={{ borderTopWidth: 1, borderTopColor: colors.line, marginTop: 8, paddingTop: 8 }}>
               <Line label="Subtotal" value={peso(s.subtotal)} />

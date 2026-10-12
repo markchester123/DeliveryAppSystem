@@ -65,10 +65,7 @@ export default function CheckoutSheet({ visible, onClose, onCheckout }) {
 
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Pressable
-                    onPress={() => {
-                      console.log('minus', key);
-                      s.remove(key);
-                    }}
+                    onPress={() => s.remove(key)}
                     style={{
                       width: 36,
                       height: 36,
@@ -89,10 +86,7 @@ export default function CheckoutSheet({ visible, onClose, onCheckout }) {
                   </Text>
 
                   <Pressable
-                    onPress={() => {
-                      console.log('plus', key);
-                      s.add(key);
-                    }}
+                    onPress={() => s.add(key)}
                     style={{
                       width: 36,
                       height: 36,

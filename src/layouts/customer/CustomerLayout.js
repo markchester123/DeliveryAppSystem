@@ -7,7 +7,7 @@ import BottomTabs from '../components/BottomTabs';
 import AccountSheet from '../components/AccountSheet';
 import { CustomerSessionProvider, useCustomerSession } from './CustomerSession';
 import { useAuth } from '../../users';
-import { useStore } from '../../data/StoreContext';
+import { useStore, unreadAnnouncements } from '../../data/StoreContext';
 import { ordersOfCustomer, activeOrders } from '../../data/selectors';
 import HomeScreen from './HomeScreen';
 import MenuScreen from './MenuScreen';
@@ -17,12 +17,14 @@ import CheckoutSheet from './CheckoutSheet';
 import OrdersSheet from './OrdersSheet';
 import OrderDetailsSheet from './OrderDetailsSheet';
 import ReportSheet from './ReportSheet';
+import AnnouncementsScreen from './AnnouncementsScreen';
 
 const TABS = [
   { key: 'home', label: 'Home', icon: 'home' },
   { key: 'menu', label: 'Menu', icon: 'coffee' },
   { key: 'coupons', label: 'Coupons', icon: 'tag' },
   { key: 'chat', label: 'Chat', icon: 'message-circle' },
+  { key: 'news', label: 'News', icon: 'bell' },
 ];
 
 function Shell() {
@@ -30,13 +32,15 @@ function Shell() {
   const { user } = useAuth();
   const { state } = useStore();
   const activeCount = activeOrders(ordersOfCustomer(state.orders, user.name)).length;
+  const unread = unreadAnnouncements(state);
+  const tabs = TABS.map((t) => (t.key === 'news' ? { ...t, badge: unread || null } : t));
 
   const [tab, setTab] = useState('home');
   const [sheet, setSheet] = useState(null);
   const [chatOrder, setChatOrder] = useState(null);
   const openChat = (id) => { setChatOrder(id); setTab('chat'); setSheet(null); };
 
-  // Saved cart: [{ id, qty }]. Only changes when "Add to cart" is pressed.
+  // Saved cart: [{ key, qty }] (key = "<productId>-<size>"). Only changes when "Add to cart" is pressed.
   const [saved, setSaved] = useState([]);
   const savedCount = saved.reduce((n, l) => n + l.qty, 0);
 
@@ -45,10 +49,10 @@ function Shell() {
     if (!s.lines.length) { setSheet(null); return; }
     setSaved((prev) => {
       const next = prev.map((l) => ({ ...l }));
-      s.lines.forEach(({ item, qty }) => {
-        const found = next.find((l) => l.id === item.id);
+      s.lines.forEach(({ key, qty }) => {
+        const found = next.find((l) => l.key === key);
         if (found) found.qty += qty;
-        else next.push({ id: item.id, qty });
+        else next.push({ key, qty });
       });
       return next;
     });
@@ -58,8 +62,8 @@ function Shell() {
 
   // Cart icon: load saved items into the session, then open the checkout form
   const openForm = () => {
-    saved.forEach(({ id, qty }) => {
-      for (let i = 0; i < qty; i++) s.add(id);
+    saved.forEach(({ key, qty }) => {
+      for (let i = 0; i < qty; i++) s.add(key);
     });
     setSaved([]);
     setSheet('form');
@@ -67,7 +71,7 @@ function Shell() {
 
   // Closed the form without ordering: put the items back in the saved cart
   const closeForm = () => {
-    setSaved(s.lines.map(({ item, qty }) => ({ id: item.id, qty })));
+    setSaved(s.lines.map(({ key, qty }) => ({ key, qty })));
     s.clearCart();
     setSheet(null);
   };
@@ -76,7 +80,7 @@ function Shell() {
     <Screen background="#EFEAE2">
       <Frame>
         <AppHeader
-          title={TABS.find((t) => t.key === tab).label}
+          title={tab === 'news' ? 'Announcements' : TABS.find((t) => t.key === tab).label}
           right={<>
             <IconButton
               icon="clipboard"
@@ -98,8 +102,9 @@ function Shell() {
           {tab === 'menu' && <MenuScreen openCart={() => setSheet('cart')} />}
           {tab === 'coupons' && <CouponsScreen />}
           {tab === 'chat' && <ChatScreen orderId={chatOrder} onPick={setChatOrder} />}
+          {tab === 'news' && <AnnouncementsScreen />}
         </View>
-        <BottomTabs tabs={TABS} current={tab} onChange={setTab} />
+        <BottomTabs tabs={tabs} current={tab} onChange={setTab} />
       </Frame>
 
       {/* Menu bar: items you picked, Add to cart, Clear cart */}

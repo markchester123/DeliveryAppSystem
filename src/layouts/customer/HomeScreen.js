@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text } from 'react-native';
+import { ScrollView, View, Text, Image } from 'react-native';
 import Button from '../components/Button';
 import Pill from '../components/Pill';
 import { Note, EmptyState } from '../components/Feedback';
@@ -9,6 +9,18 @@ import { useStore } from '../../data/StoreContext';
 import { ordersOfCustomer, activeOrders } from '../../data/selectors';
 import { STATUS_LABEL } from '../../data/constants';
 import { peso, firstName } from '../../utils/format';
+
+
+const HERO = require('../../../assets/products/Hero Card Section.png');
+const HERO_RATIO = 576 / 370;
+
+function Hero() {
+  return (
+    <View style={{ width: '100%', aspectRatio: HERO_RATIO, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.card }}>
+      <Image source={HERO} resizeMode="contain" accessibilityLabel="Coffee, the finest selection" style={{ width: '100%', height: '100%' }} />
+    </View>
+  );
+}
 
 export function OrderCard({ order, onChat }) {
   const last = order.log[order.log.length - 1];
@@ -32,6 +44,7 @@ export default function HomeScreen({ go, openChat }) {
   const active = activeOrders(ordersOfCustomer(state.orders, user.name));
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+      <Hero />
       <Button title="Order a drink" variant="primary" onPress={() => go('menu')} block />
       {active.length ? active.map((o) => <OrderCard key={o.id} order={o} onChat={() => openChat(o.id)} />) : <EmptyState>No orders on the way.</EmptyState>}
     </ScrollView>

@@ -10,7 +10,7 @@ export const dayIndex = (o) => Math.floor((o.t - startOfToday()) / DAY);
 export const oneOrderNeed = (id) => MENU.reduce((m, d) => Math.max(m, d.needs[id] || 0), 0);
 
 // out = nothing left
-// low = at or below the reorder threshold (i.reorder), OR above it but not enough for one more order.
+// low = at or below the reorder threshold (i.reorder, the POS "threshold"), OR above it but not enough for one more order.
 // The second check is the safety net: several orders can land at once and jump an ingredient
 // straight past the threshold, so "low" must also mean "the next order may not be covered".
 export const stockStatus = (i) => {
@@ -19,7 +19,7 @@ export const stockStatus = (i) => {
   return 'ok';
 };
 export const lowStockReason = (i) => (i.qty <= i.reorder ? 'at or below the reorder level' : 'not enough for one more order');
-export const stepFor = (i) => (i.unit === 'pcs' ? 10 : 1);
+export const stepFor = (i) => (i.unit === 'ml' || i.unit === 'g' ? 50 : i.unit === 'pcs' ? 10 : 1);
 
 export function missingIngredients(m, inventory) {
   return Object.keys(m.needs)

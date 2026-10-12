@@ -9,6 +9,7 @@ import SalesScreen from './SalesScreen';
 import OrdersScreen from './OrdersScreen';
 import ChatsScreen from './ChatsScreen';
 import ReportsScreen from './ReportsScreen';
+import AnnouncementsScreen from '../customer/AnnouncementsScreen';
 import { useLowStockToast } from '../components/LowStockAlert';
 import { colors } from '../theme';
 import { useStore } from '../../data/StoreContext';
@@ -32,6 +33,7 @@ export default function AdminLayout() {
     { key: 'orders', label: 'Orders', icon: 'file-text', badge: inProgress || null },
     { key: 'chats', label: 'Chats', icon: 'message-circle' },
     { key: 'reports', label: 'Reports', icon: 'flag', badge: openReports || null },
+    { key: 'news', label: 'News', icon: 'bell' },
   ];
 
   const body = (
@@ -41,6 +43,7 @@ export default function AdminLayout() {
       {tab === 'orders' && <OrdersScreen openChat={openChat} />}
       {tab === 'chats' && <ChatsScreen wide={wide} selected={chatSel} onSelect={setChatSel} />}
       {tab === 'reports' && <ReportsScreen openChat={openChat} />}
+      {tab === 'news' && <AnnouncementsScreen scroll={false} />}
     </ScrollView>
   );
 

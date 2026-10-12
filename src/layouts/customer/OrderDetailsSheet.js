@@ -3,14 +3,15 @@ import { ScrollView, View, Text, Pressable, Modal, StyleSheet } from 'react-nati
 import Sheet from '../components/Sheet';
 import Pill from '../components/Pill';
 import Icon from '../components/Icon';
-import { EmptyState } from '../components/Feedback';
+import { EmptyState, useToast } from '../components/Feedback';
+import Stars from '../components/Stars';
 import { OrderCard } from './HomeScreen';
 import { colors, type, radius } from '../theme';
 import { useAuth } from '../../users';
 import { useStore } from '../../data/StoreContext';
 import { ordersOfCustomer, activeOrders } from '../../data/selectors';
 import { STATUS_LABEL } from '../../data/constants';
-import { menuItem } from '../../data/menu';
+import { menuItem, baseId } from '../../data/menu';
 import { peso, firstName } from '../../utils/format';
 
 function Tab({ label, selected, onPress }) {
@@ -51,6 +52,56 @@ function SectionTitle({ children, first }) {
   );
 }
 
+// Rate each drink of a delivered order (once per order). Averages are kept in Firestore.
+function RateOrder({ order }) {
+  const { state, actions } = useStore();
+  const toast = useToast();
+  const [picks, setPicks] = useState({});
+  const [busy, setBusy] = useState(false);
+
+  const ids = [];
+  order.items.forEach((l) => { const id = baseId(l.id); if (menuItem(id) && !ids.includes(id)) ids.push(id); });
+  if (!ids.length) return null;
+
+  const done = state.ratings[order.id];
+  const ready = ids.every((id) => picks[id] > 0);
+
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const ok = await actions.rateOrder(order.id, picks);
+      toast(ok ? 'Thanks for your rating!' : 'This order was already rated');
+    } catch (e) {
+      toast('Could not save your rating. Try again.');
+    }
+    setBusy(false);
+  };
+
+  return (
+    <>
+      <SectionTitle>{done ? 'Your rating' : 'Rate your drinks'}</SectionTitle>
+      {ids.map((id) => (
+        <View key={id} style={{ paddingVertical: 6 }}>
+          <Text style={[type.body, { marginBottom: 4 }]}>{menuItem(id).name}</Text>
+          {done
+            ? <Stars value={(done.stars && done.stars[id]) || 0} size={24} />
+            : <Stars value={picks[id] || 0} onChange={(n) => setPicks((p) => ({ ...p, [id]: n }))} />}
+        </View>
+      ))}
+      {!done ? (
+        <Pressable
+          disabled={!ready || busy}
+          onPress={submit}
+          accessibilityRole="button"
+          style={{ marginTop: 10, paddingVertical: 12, borderRadius: radius.lg, backgroundColor: ready && !busy ? colors.primary : colors.line, alignItems: 'center' }}
+        >
+          <Text style={{ color: ready && !busy ? '#fff' : colors.muted, fontWeight: '700' }}>{busy ? 'Saving…' : 'Submit rating'}</Text>
+        </Pressable>
+      ) : null}
+    </>
+  );
+}
+
 function OrderDetail({ order, onClose, onChat }) {
   return (
     <Modal visible={!!order} transparent animationType="slide" onRequestClose={onClose}>
@@ -76,7 +127,7 @@ function OrderDetail({ order, onClose, onChat }) {
                   const m = menuItem(line.id);
                   return (
                     <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6 }}>
-                      <Text style={type.body}>{m ? m.name : line.id} × {line.q}</Text>
+                      <Text style={type.body}>{m ? `${m.name} · ${m.size}oz` : line.id} × {line.q}</Text>
                       <Text style={type.body}>{m ? peso(m.price * line.q) : ''}</Text>
                     </View>
                   );
@@ -115,6 +166,8 @@ function OrderDetail({ order, onClose, onChat }) {
                   </View>
                 ))}
 
+                {order.status === 'delivered' ? <RateOrder order={order} /> : null}
+
                 {order.driver ? (
                   <Pressable onPress={() => onChat(order.id)} style={{ marginTop: 18, paddingVertical: 12, borderRadius: radius.lg, backgroundColor: colors.primary, alignItems: 'center' }}>
                     <Text style={{ color: '#fff', fontWeight: '700' }}>Chat with {firstName(order.driver)}</Text>
@@ -135,13 +188,14 @@ export default function OrderDetailsSheet({ visible, onClose, onChat }) {
   const { user } = useAuth();
   const { state } = useStore();
   const [tab, setTab] = useState('active');
-  const [selected, setSelected] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
   const all = ordersOfCustomer(state.orders, user.name);
   const active = activeOrders(all);
   const activeIds = new Set(active.map((o) => o.id));
   const history = all.filter((o) => !activeIds.has(o.id));
   const list = tab === 'active' ? active : history;
+  const selected = all.find((o) => o.id === selectedId) || null;
 
   return (
     <Sheet visible={visible} onClose={onClose} title="My orders">
@@ -156,7 +210,7 @@ export default function OrderDetailsSheet({ visible, onClose, onChat }) {
               <View key={o.id}>
                 <OrderCard order={o} onChat={() => onChat(o.id)} />
                 <Pressable
-                  onPress={() => setSelected(o)}
+                  onPress={() => setSelectedId(o.id)}
                   accessibilityRole="button"
                   accessibilityLabel={`View details for order ${o.id}`}
                   style={{
@@ -168,7 +222,9 @@ export default function OrderDetailsSheet({ visible, onClose, onChat }) {
                     alignItems: 'center',
                   }}
                 >
-                  <Text style={[type.body, { fontWeight: '600', color: colors.primary }]}>View details</Text>
+                  <Text style={[type.body, { fontWeight: '600', color: colors.primary }]}>
+                    {o.status === 'delivered' && !state.ratings[o.id] ? '★ Rate your order' : 'View details'}
+                  </Text>
                 </Pressable>
               </View>
             ))
@@ -177,8 +233,8 @@ export default function OrderDetailsSheet({ visible, onClose, onChat }) {
 
       <OrderDetail
         order={selected}
-        onClose={() => setSelected(null)}
-        onChat={(id) => { setSelected(null); onChat(id); }}
+        onClose={() => setSelectedId(null)}
+        onChat={(id) => { setSelectedId(null); onChat(id); }}
       />
     </Sheet>
   );
